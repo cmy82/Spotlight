@@ -3,15 +3,24 @@
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
 
-This library is a modification of TakuSemba/Spotlight, modified and reworked to allow Single or Multiple
-targets, custom direct drawing of a text description of the highlighted target, and closing on touch.
+This library is a modification of TakuSemba/Spotlight. It has been modified and reworked with several enhancements:
+   1. Single or Multiple targets 
+   2. Custom direct drawing of a text description of the highlighted target 
+   3. Closing on touch outside of an attached View
+   4. Pre/Post rendering of custom images
+   5. "Smart" drawing of the message, based on the anchor points for the text and target
+   6. Target positioning based on an offset from the selected target View (useful for highlighting an icon on a TextView and not the whole View)
+   7. Use of non-circular (including custom) effects
 
 ## Usage
 
-Here are some example usages pulled directly from another project.
+Here are some example usages pulled directly from another project. 
+In the first example, it is a basic usage with a TargetListener to show/hide buttons to advance/rewind the Target, and a OnTargetRenderListener 
+to draw a custom message on the screen, instead of relying on a View to hold the message. This allows reuse of the same backing View for all Targets, 
+instead of a new View, as in the original design.
 
-#Target
-```kt
+##Target
+```kotlin
 val menuTarget = SingleTarget.Builder()
     .setAnchorWithOffset(toolbar, -(toolbar.width/2f)+ImgUtils.dpToPx(30), 0f)
     .setShape(Circle(100f))
@@ -62,13 +71,17 @@ val menuTarget = SingleTarget.Builder()
 helpTargets.add(menuTarget)
 ```
 
-```kt
+The second example shows usage of a custom image for a RecyclerView. The custom image is anchored to the RecyclerView if it has no children
+and to the first valid view if it does (this recycler shows ads, so the first view may be an ad and not valid). It highlights the Target if
+there is a valid child and draws the custom image simulating a Target if there is not.
+As you can see in this and the above example, the custom images for the text and child are cached and reused since they should be static.
+
+```kotlin
 var v = (slistView.recyclerShopLists.findViewHolderForAdapterPosition(0)?.itemView)
     var cld: View? = null
     val pos = IntArray(2)
     var offst = 0f
     if(v != null) {
-        //Timber.e("V is of type ${v.javaClass}")
         v.getLocationOnScreen(pos)
         cld = v.findViewById<View>(R.id.grocery_item_card)
         if(cld != null) {
@@ -78,7 +91,6 @@ var v = (slistView.recyclerShopLists.findViewHolderForAdapterPosition(0)?.itemVi
     if(v == null) {
         v = (slistView.recyclerShopLists.findViewHolderForAdapterPosition(1)?.itemView)
         if(v != null) {
-            //Timber.e("(2) V is of type ${v.javaClass}")
             v.getLocationOnScreen(pos)
             cld = v.findViewById<View>(R.id.grocery_item_card)
             if(cld != null) {
@@ -88,14 +100,12 @@ var v = (slistView.recyclerShopLists.findViewHolderForAdapterPosition(0)?.itemVi
     }
     if(cld==null){
         slistView.recyclerShopLists.getLocationOnScreen(pos)
-        offst = ResourcesCompat.getDrawable(resources, R.drawable.tgt_item_list, null)!!.intrinsicHeight / 2f
-        //Timber.w("Unable to locate item card ..... defaulting to stored image")
+        offst = ResourcesCompat.getDrawable(resources, R.drawable.tgt_item_list, null)!!.intrinsicHeight / 2f        
     } else {
         offst = cld.height / 2f
     }
     val itemTarget = SingleTarget.Builder()
         .setAnchor(pos[0].toFloat() + slistView.recyclerShopLists.width/2, pos[1].toFloat() + offst)
-        //.setAnchorWithOffset(spriceView.recyclerShopPrice, 0f, 0f)
         .setShape(RoundedRectangle(2*offst, slistView.recyclerShopLists.width.toFloat(), 5f))
         .setOverlay(helpBack!!)
         .setEffect(PulseEffect(Triple(50f,slistView.recyclerShopLists.width.toFloat(),2*offst + 25), 5f,
@@ -108,7 +118,6 @@ var v = (slistView.recyclerShopLists.findViewHolderForAdapterPosition(0)?.itemVi
             var bmpRendered = false
             val itmsInList = (v!=null)
             override fun onPreRender(c: Canvas, t: Target, p: Paint) {
-                //Timber.w("Is there an item in recyclerlist: $itmsInList")
                 if(!itmsInList){
                     if(!bmpRendered){
                         val ratio = dflt.intrinsicWidth / slistView.recyclerShopLists.width.toFloat()
@@ -119,7 +128,6 @@ var v = (slistView.recyclerShopLists.findViewHolderForAdapterPosition(0)?.itemVi
                 }
             }
             override fun onRendered(c: Canvas, t: Target, p: Paint) {
-                //Timber.w("Is there an item in recyclerlist: $itmsInList")
                 if(!msgRenderd) {
                     val ax = t.anchor.x
                     val ay = t.anchor.y + offst + ImgUtils.dpToPx(36f)
@@ -156,8 +164,8 @@ var v = (slistView.recyclerShopLists.findViewHolderForAdapterPosition(0)?.itemVi
 helpTargets.add(itemTarget)
 ```
 
-#Spotlight
-```kt
+##Spotlight
+```kotlin
 val spotlight = Spotlight.Builder(requireActivity())
             .setTargets(helpTargets)
             .setDuration(1000)
@@ -165,3 +173,17 @@ val spotlight = Spotlight.Builder(requireActivity())
             .setCloseOnTouch(true)
             .build()
 ```
+
+To show the Spotlight immediately on load, you can attach it to a GlobalLayoutListener as such:
+
+```kotlin
+// Spotlight
+slistView.recyclerShopLists.viewTreeObserver.addOnGlobalLayoutListener( object: ViewTreeObserver.OnGlobalLayoutListener {
+    override fun onGlobalLayout() {
+        slistView.recyclerShopLists.viewTreeObserver.removeOnGlobalLayoutListener(this)
+        if(!GEBManager.checkHelpShown("lists"))
+            setupSpotlight()
+    }
+})
+```
+
