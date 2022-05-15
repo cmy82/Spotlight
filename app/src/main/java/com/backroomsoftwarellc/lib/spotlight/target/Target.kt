@@ -22,6 +22,22 @@ interface Target {
     val message: String
 
     fun getTargetCount(): Int
+
+    /**
+     * Renders a custom message directly on the canvas/bitmap.
+     * Renders the message based on the relative [txtAnchor] position to the [anchor] position of the [Target] as follows:
+     *  - If txtAnchor.x < anchor.x it left aligns the text
+     *  - If txtAnchor.x > anchor.x it right aligns the text
+     *  - If txtAnchor.x = anchor.x it center aligns the text
+     *  - If txtAnchor.y < anchor.y it top aligns the text and draws vertically down the screen
+     *  - If txtAnchor.y > anchor.y it bottom aligns the text and draws vertically up the screen
+     *  - If txtAnchor.y = anchor.y it center aligns the text vertically on anchor.y
+     *  @param b [Bitmap] to render the text message onto
+     *  @param txtAnchor screen position to anchor the text to
+     *  @param w width of the drawable area for the text message
+     *  @param avoid [List] of locations to not draw over (does not draw around, just shortens line length so it doesn't draw on top of)
+     *  @param txtSize text size in SP
+     */
     fun renderTargetMessage(b: Bitmap, txtAnchor: PointF, w: Float, avoid: List<HitArea>, txtSize: Float = 24f): Bitmap {
         val cnv = Canvas(b)
         val lnHeight = spToPx(txtSize + 2)

@@ -19,7 +19,7 @@ In the first example, it is a basic usage with a TargetListener to show/hide but
 to draw a custom message on the screen, instead of relying on a View to hold the message. This allows reuse of the same backing View for all Targets, 
 instead of a new View, as in the original design.
 
-##Target
+## Target
 ```kotlin
 val menuTarget = SingleTarget.Builder()
     .setAnchorWithOffset(toolbar, -(toolbar.width/2f)+ImgUtils.dpToPx(30), 0f)
@@ -53,7 +53,6 @@ val menuTarget = SingleTarget.Builder()
                 colorFilter = null
             }
             c.drawBitmap(msgBmp, 0f, 0f, p)
-            //Timber.e(t.message)
         }
     })
     .setOnTargetListener(object: OnTargetListener {
@@ -164,7 +163,7 @@ var v = (slistView.recyclerShopLists.findViewHolderForAdapterPosition(0)?.itemVi
 helpTargets.add(itemTarget)
 ```
 
-##Spotlight
+## Spotlight
 ```kotlin
 val spotlight = Spotlight.Builder(requireActivity())
             .setTargets(helpTargets)
